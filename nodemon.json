@@ -1,0 +1,5 @@
+{
+  "exec": "npm start",
+  "ignore": ["dist/*", "node_modules/*", "src/*", "backend/*", "test/*"],
+  "delay": 500
+}
