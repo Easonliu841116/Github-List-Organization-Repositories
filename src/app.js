@@ -2,15 +2,23 @@ import 'normalize.css'
 
 import React, { useState } from 'react'
 import { render } from 'react-dom'
-import { HashRouter } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import Index from '@/pages/index'
+import { ChakraProvider } from '@chakra-ui/react'
+
+import Header from '@/components/Header'
+import Index from '@/pages/Index'
 
 function App() {
   return (
-    <HashRouter>
-      <Index />
-    </HashRouter>
+    <ChakraProvider>
+      <BrowserRouter>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Index />} />
+        </Routes>
+      </BrowserRouter>
+    </ChakraProvider>
   )
 }
 
