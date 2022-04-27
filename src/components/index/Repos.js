@@ -5,11 +5,11 @@ import { VStack, Box, Heading, Text, Link } from '@chakra-ui/react'
 function Repos({ repoList }, ref) {
   return (
     <VStack spacing={5} my={5} ref={ref}>
-      {repoList.map((repo) => (
+      {repoList.map((repo, index) => (
         <Link
           href={repo.html_url}
           target="_blank"
-          key={repo.node_id}
+          key={`${repo.id}_${index}`}
           w={'100%'}
           isExternal
         >

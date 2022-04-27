@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import styled from '@emotion/styled'
+import React, { useState, useEffect, useRef } from 'react'
 
 import { API_URL, getData } from '@/utils/api'
 
@@ -8,7 +7,8 @@ import {
   FormControl,
   FormLabel,
   Select,
-  Divider
+  Divider,
+  Text
 } from '@chakra-ui/react'
 
 import Loading from '@/components/Loading'
@@ -31,8 +31,8 @@ function ParameterSelect({ selectId, params, label, onChangeEvent }) {
     <FormControl my={5}>
       <FormLabel htmlFor={selectId}>{label}</FormLabel>
       <Select id={selectId} onChange={(e) => onChangeEvent(e.target.value)}>
-        {params.map((param) => (
-          <option key={param} value={param}>
+        {params.map((param, index) => (
+          <option key={`${param}_${index}`} value={param}>
             {param}
           </option>
         ))}
@@ -48,8 +48,6 @@ export default function IndexContainer() {
   const [orgList, setOrgList] = useState([])
   const [currentOrg, setCurrentOrg] = useState('')
   const [repoList, setRepoList] = useState([])
-
-  const [isObserve, setIsObserve] = useState(false)
 
   const [page, setPage] = useState(1)
   const [repoType, setRepoType] = useState(repoTypeList[0])
@@ -99,7 +97,7 @@ export default function IndexContainer() {
     async function callback(entries) {
       if (!entries[0].isIntersecting) return
       setPage((oldPage) => (oldPage += 1))
-      setIsObserve(false)
+      setOrgRepoData({ isLoadMore: true })
       observer.disconnect()
     }
     const observer = new IntersectionObserver(callback, options)
@@ -109,9 +107,10 @@ export default function IndexContainer() {
     observer.observe(child[child.length - 1])
   }
 
-  function changeSortCondition() {
+  function replaceRepoList() {
     setRepoList([])
     setPage(1)
+    setOrgRepoData({ isLoadMore: false })
   }
 
   useEffect(() => {
@@ -119,14 +118,11 @@ export default function IndexContainer() {
   }, [])
 
   useEffect(() => {
-    if (!currentOrg) return
-    page < 2
-      ? setOrgRepoData({ isLoadMore: false })
-      : setOrgRepoData({ isLoadMore: true })
-  }, [currentOrg, page])
+    currentOrg && setOrgRepoData({ isLoadMore: false })
+  }, [currentOrg])
 
   useEffect(() => {
-    currentOrg && changeSortCondition()
+    currentOrg && replaceRepoList()
   }, [repoType, repoSort, repoDirection])
 
   return (
@@ -151,7 +147,7 @@ export default function IndexContainer() {
           onChangeEvent={setRepoDirection}
         />
         <Divider pt={3} />
-        <FormControl mt={5} mb={10}>
+        <FormControl mt={5} mb={5}>
           <FormLabel color="blue.500" htmlFor="organizations">
             Organizations
           </FormLabel>
@@ -160,18 +156,23 @@ export default function IndexContainer() {
             id="organizations"
             placeholder="Select Organization"
             onChange={(e) => {
-              setCurrentOrg(e.target.value)
               setPage(1)
+              setCurrentOrg(e.target.value)
             }}
           >
-            {orgList.map((org) => (
-              <option value={org.login} key={org.node_id}>
+            {orgList.map((org, index) => (
+              <option value={org.login} key={`${org.id}_${index}`}>
                 {org.login}
               </option>
             ))}
           </Select>
         </FormControl>
-        <Repos ref={reposRef} repoList={repoList} />
+        {repoList.length > 0 && <Repos ref={reposRef} repoList={repoList} />}
+        {currentOrg && !repoList.length && !isLoading && (
+          <Text textAlign="center" borderWidth="1px" p={5} borderRadius="md">
+            There is no result.
+          </Text>
+        )}
         {isLoading && <Loading />}
       </Container>
     </main>
