@@ -11,6 +11,7 @@ export default function Loading() {
         emptyColor="gray.200"
         color="blue.500"
         size="lg"
+        my={2}
       />
     </Flex>
   )

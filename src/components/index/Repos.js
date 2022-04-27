@@ -1,10 +1,10 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 
 import { VStack, Box, Heading, Text, Link } from '@chakra-ui/react'
 
-export default function Repos({ repoList }) {
+function Repos({ repoList }, ref) {
   return (
-    <VStack spacing={5} my={5}>
+    <VStack spacing={5} my={5} ref={ref}>
       {repoList.map((repo) => (
         <Link
           href={repo.html_url}
@@ -22,3 +22,5 @@ export default function Repos({ repoList }) {
     </VStack>
   )
 }
+
+export default forwardRef(Repos)

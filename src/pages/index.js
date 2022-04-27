@@ -1,53 +1,87 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import styled from '@emotion/styled'
 
-import { API_URL, GITHUB_URL, getData } from '@/utils/api'
+import { API_URL, getData } from '@/utils/api'
 
-import {
-  Container,
-  FormControl,
-  FormLabel,
-  Select,
-  Spinner
-} from '@chakra-ui/react'
+import { Container, FormControl, FormLabel, Select } from '@chakra-ui/react'
 
 import Loading from '@/components/Loading'
 import Repos from '@/components/index/Repos'
 
 export default function IndexContainer() {
-  const [orgList, setOrgList] = useState([])
-  const [repoList, setRepoList] = useState([])
-
   const [isLoading, setIsLoading] = useState(false)
 
-  const [orgPerPageLastId, setOrgPerPageLastId] = useState('')
+  const [orgList, setOrgList] = useState([])
+  const [currentOrg, setCurrentOrg] = useState('')
+  const [repoList, setRepoList] = useState([])
+  const [page, setPage] = useState(1)
+
+  const reposRef = useRef()
 
   function getOrgsList() {
-    return getData(
-      API_URL + `/organizations?per_page=10&since=${orgPerPageLastId}`
-    )
+    return getData(API_URL + `/organizations`)
   }
 
-  async function getOrgRepos(orgName) {
-    return getData(API_URL + `/orgs/${orgName}/repos?per_page=10`)
+  async function getOrgRepos() {
+    return getData(
+      API_URL + `/orgs/${currentOrg}/repos?per_page=10&page=${page}`
+    )
   }
 
   async function setOrgListData() {
     const { data } = await getOrgsList()
     setOrgList((oldOrgs) => [...oldOrgs, ...data])
-    setOrgPerPageLastId(data[data.length - 1]['id'])
   }
 
-  async function setOrgRepoData(org) {
+  async function setOrgRepoData({ isLoadMore }) {
     setIsLoading(true)
-    const { data } = await getOrgRepos(org)
-    setRepoList(data)
+    const { data } = await getOrgRepos()
+    if (!data.length) {
+      return setIsLoading(false)
+    }
+    isLoadMore
+      ? setRepoList((oldData) => [...oldData, ...data])
+      : setRepoList(data)
     setIsLoading(false)
+  }
+
+  async function setObserver() {
+    const options = {
+      rootMargin: '0px',
+      threshold: 0
+    }
+
+    async function callback(entries) {
+      if (!entries[0].isIntersecting) return
+      console.log(entries[0].isIntersecting)
+      setPage((oldPage) => (oldPage += 1))
+      observer.disconnect()
+    }
+    const observer = new IntersectionObserver(callback, options)
+
+    const child = reposRef.current.childNodes
+
+    observer.observe(child[child.length - 1])
   }
 
   useEffect(() => {
     setOrgListData()
   }, [])
+
+  useEffect(() => {
+    if (!repoList.length) return
+    setObserver()
+  }, [repoList])
+
+  useEffect(() => {
+    if (!currentOrg) return
+    setOrgRepoData({ isLoadMore: false })
+  }, [currentOrg])
+
+  useEffect(() => {
+    if (page < 2) return
+    setOrgRepoData({ isLoadMore: true })
+  }, [page])
 
   return (
     <main>
@@ -56,7 +90,8 @@ export default function IndexContainer() {
           <FormLabel htmlFor="organizations">Organizations</FormLabel>
           <Select
             id="organizations"
-            onChange={(e) => setOrgRepoData(e.target.value)}
+            placeholder="Select Organization"
+            onChange={(e) => setCurrentOrg(e.target.value)}
           >
             {orgList.map((org) => (
               <option value={org.login} key={org.node_id}>
@@ -65,7 +100,8 @@ export default function IndexContainer() {
             ))}
           </Select>
         </FormControl>
-        {isLoading ? <Loading /> : <Repos repoList={repoList} />}
+        <Repos ref={reposRef} repoList={repoList} />
+        {isLoading && <Loading />}
       </Container>
     </main>
   )
