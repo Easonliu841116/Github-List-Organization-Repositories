@@ -43,14 +43,15 @@ function ParameterSelect({ selectId, params, label, onChangeEvent }) {
 
 export default function IndexContainer() {
   const [isLoading, setIsLoading] = useState(false)
-
   const limit = 10
 
   const [orgList, setOrgList] = useState([])
   const [currentOrg, setCurrentOrg] = useState('')
   const [repoList, setRepoList] = useState([])
-  const [page, setPage] = useState(1)
+
   const [isObserve, setIsObserve] = useState(false)
+
+  const [page, setPage] = useState(1)
   const [repoType, setRepoType] = useState(repoTypeList[0])
   const [repoSort, setRepoSort] = useState(repoSortList[0])
   const [repoDirection, setRepoDirection] = useState(repoDirectionList[0])
@@ -61,7 +62,7 @@ export default function IndexContainer() {
     return getData(API_URL + `/organizations`)
   }
 
-  async function getOrgRepos() {
+  function getOrgRepos() {
     return getData(
       API_URL +
         `/orgs/${currentOrg}/repos?per_page=${limit}&page=${page}&type=${repoType}&sort=${repoSort}&direction=${repoDirection}`
@@ -84,7 +85,7 @@ export default function IndexContainer() {
       ? setRepoList((oldData) => [...oldData, ...data])
       : setRepoList(data)
 
-    if (l === limit) setIsObserve(true)
+    if (l === limit) setObserver(true)
 
     setIsLoading(false)
   }
@@ -98,6 +99,7 @@ export default function IndexContainer() {
     async function callback(entries) {
       if (!entries[0].isIntersecting) return
       setPage((oldPage) => (oldPage += 1))
+      setIsObserve(false)
       observer.disconnect()
     }
     const observer = new IntersectionObserver(callback, options)
@@ -107,7 +109,7 @@ export default function IndexContainer() {
     observer.observe(child[child.length - 1])
   }
 
-  async function changeSortCondition() {
+  function changeSortCondition() {
     setRepoList([])
     setPage(1)
   }
@@ -115,12 +117,6 @@ export default function IndexContainer() {
   useEffect(() => {
     setOrgListData()
   }, [])
-
-  useEffect(() => {
-    if (!isObserve) return
-    setObserver()
-    setIsObserve(false)
-  }, [isObserve])
 
   useEffect(() => {
     if (!currentOrg) return
