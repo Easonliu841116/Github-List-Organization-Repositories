@@ -3,10 +3,43 @@ import styled from '@emotion/styled'
 
 import { API_URL, getData } from '@/utils/api'
 
-import { Container, FormControl, FormLabel, Select } from '@chakra-ui/react'
+import {
+  Container,
+  FormControl,
+  FormLabel,
+  Select,
+  Divider
+} from '@chakra-ui/react'
 
 import Loading from '@/components/Loading'
 import Repos from '@/components/index/Repos'
+
+const repoTypeList = [
+  'all',
+  'public',
+  'private',
+  'forks',
+  'sources',
+  'member',
+  'internal'
+]
+const repoSortList = ['created', 'updated', 'pushed', 'full_name']
+const repoDirectionList = ['desc', 'asc']
+
+function ParameterSelect({ selectId, params, label, onChangeEvent }) {
+  return (
+    <FormControl my={5}>
+      <FormLabel htmlFor={selectId}>{label}</FormLabel>
+      <Select id={selectId} onChange={(e) => onChangeEvent(e.target.value)}>
+        {params.map((param) => (
+          <option key={param} value={param}>
+            {param}
+          </option>
+        ))}
+      </Select>
+    </FormControl>
+  )
+}
 
 export default function IndexContainer() {
   const [isLoading, setIsLoading] = useState(false)
@@ -18,6 +51,9 @@ export default function IndexContainer() {
   const [repoList, setRepoList] = useState([])
   const [page, setPage] = useState(1)
   const [isObserve, setIsObserve] = useState(false)
+  const [repoType, setRepoType] = useState(repoTypeList[0])
+  const [repoSort, setRepoSort] = useState(repoSortList[0])
+  const [repoDirection, setRepoDirection] = useState(repoDirectionList[0])
 
   const reposRef = useRef()
 
@@ -27,7 +63,8 @@ export default function IndexContainer() {
 
   async function getOrgRepos() {
     return getData(
-      API_URL + `/orgs/${currentOrg}/repos?per_page=${limit}&page=${page}`
+      API_URL +
+        `/orgs/${currentOrg}/repos?per_page=${limit}&page=${page}&type=${repoType}&sort=${repoSort}&direction=${repoDirection}`
     )
   }
 
@@ -61,7 +98,6 @@ export default function IndexContainer() {
     async function callback(entries) {
       if (!entries[0].isIntersecting) return
       setPage((oldPage) => (oldPage += 1))
-      setIsObserve(false)
       observer.disconnect()
     }
     const observer = new IntersectionObserver(callback, options)
@@ -71,33 +107,65 @@ export default function IndexContainer() {
     observer.observe(child[child.length - 1])
   }
 
+  async function changeSortCondition() {
+    setRepoList([])
+    setPage(1)
+  }
+
   useEffect(() => {
     setOrgListData()
   }, [])
 
   useEffect(() => {
-    isObserve && setObserver()
+    if (!isObserve) return
+    setObserver()
+    setIsObserve(false)
   }, [isObserve])
 
   useEffect(() => {
-    currentOrg && setOrgRepoData({ isLoadMore: false })
-  }, [currentOrg])
+    if (!currentOrg) return
+    page < 2
+      ? setOrgRepoData({ isLoadMore: false })
+      : setOrgRepoData({ isLoadMore: true })
+  }, [currentOrg, page])
 
   useEffect(() => {
-    page >= 2 && setOrgRepoData({ isLoadMore: true })
-  }, [page])
+    currentOrg && changeSortCondition()
+  }, [repoType, repoSort, repoDirection])
 
   return (
     <main>
       <Container mt={5}>
+        <ParameterSelect
+          selectId="type"
+          params={repoTypeList}
+          label="Repo Types"
+          onChangeEvent={setRepoType}
+        />
+        <ParameterSelect
+          selectId="type"
+          params={repoSortList}
+          label="Repo sort"
+          onChangeEvent={setRepoSort}
+        />
+        <ParameterSelect
+          selectId="type"
+          params={repoDirectionList}
+          label="Repo Direction"
+          onChangeEvent={setRepoDirection}
+        />
+        <Divider pt={3} />
         <FormControl mt={5} mb={10}>
-          <FormLabel htmlFor="organizations">Organizations</FormLabel>
+          <FormLabel color="blue.500" htmlFor="organizations">
+            Organizations
+          </FormLabel>
           <Select
+            borderColor="blue.500"
             id="organizations"
             placeholder="Select Organization"
             onChange={(e) => {
-              setPage(1)
               setCurrentOrg(e.target.value)
+              setPage(1)
             }}
           >
             {orgList.map((org) => (
