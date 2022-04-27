@@ -67,24 +67,36 @@ export default function IndexContainer() {
     )
   }
 
+  function errorLog(err) {
+    process.env.NODE_ENV === 'development' && console.log(err)
+    alert('Server is busy, please try again later.')
+  }
+
   async function setOrgListData() {
-    const { data } = await getOrgsList()
-    setOrgList((oldOrgs) => [...oldOrgs, ...data])
+    try {
+      const { data } = await getOrgsList()
+      setOrgList((oldOrgs) => [...oldOrgs, ...data])
+    } catch (e) {
+      errorLog(e)
+    }
   }
 
   async function setOrgRepoData({ isLoadMore }) {
     setIsLoading(true)
-    const { data } = await getOrgRepos()
-    const l = data.length
+    try {
+      const { data } = await getOrgRepos()
+      const l = data.length
 
-    if (!l) setIsLoading(false)
+      if (!l) setIsLoading(false)
 
-    isLoadMore
-      ? setRepoList((oldData) => [...oldData, ...data])
-      : setRepoList(data)
+      isLoadMore
+        ? setRepoList((oldData) => [...oldData, ...data])
+        : setRepoList(data)
 
-    if (l === limit) setObserver(true)
-
+      if (l === limit) setObserver()
+    } catch (e) {
+      errorLog(e)
+    }
     setIsLoading(false)
   }
 
@@ -107,12 +119,6 @@ export default function IndexContainer() {
     observer.observe(child[child.length - 1])
   }
 
-  function replaceRepoList() {
-    setRepoList([])
-    setPage(1)
-    setOrgRepoData({ isLoadMore: false })
-  }
-
   useEffect(() => {
     setOrgListData()
   }, [])
@@ -122,7 +128,10 @@ export default function IndexContainer() {
   }, [currentOrg])
 
   useEffect(() => {
-    currentOrg && replaceRepoList()
+    if (!currentOrg) return
+    setRepoList([])
+    setPage(1)
+    setOrgRepoData({ isLoadMore: false })
   }, [repoType, repoSort, repoDirection])
 
   return (
@@ -156,6 +165,7 @@ export default function IndexContainer() {
             id="organizations"
             placeholder="Select Organization"
             onChange={(e) => {
+              setRepoList([])
               setPage(1)
               setCurrentOrg(e.target.value)
             }}
@@ -167,7 +177,7 @@ export default function IndexContainer() {
             ))}
           </Select>
         </FormControl>
-        {repoList.length > 0 && <Repos ref={reposRef} repoList={repoList} />}
+        <Repos ref={reposRef} repoList={repoList} />
         {currentOrg && !repoList.length && !isLoading && (
           <Text textAlign="center" borderWidth="1px" p={5} borderRadius="md">
             There is no result.
