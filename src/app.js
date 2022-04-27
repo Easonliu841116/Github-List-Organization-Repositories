@@ -11,14 +11,14 @@ import Index from '@/pages/Index'
 
 function App() {
   return (
-    <ChakraProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <ChakraProvider>
         <Header />
         <Routes>
           <Route path="/" element={<Index />} />
         </Routes>
-      </BrowserRouter>
-    </ChakraProvider>
+      </ChakraProvider>
+    </BrowserRouter>
   )
 }
 
