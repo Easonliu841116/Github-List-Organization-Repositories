@@ -136,7 +136,7 @@ export default function IndexContainer() {
 
   return (
     <main>
-      <Container mt={5}>
+      <Container mt={5} mb={10}>
         <ParameterSelect
           selectId="type"
           params={repoTypeList}
