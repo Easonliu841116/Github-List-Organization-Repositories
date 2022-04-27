@@ -61,6 +61,7 @@ export default function IndexContainer() {
     async function callback(entries) {
       if (!entries[0].isIntersecting) return
       setPage((oldPage) => (oldPage += 1))
+      setIsObserve(false)
       observer.disconnect()
     }
     const observer = new IntersectionObserver(callback, options)
@@ -75,18 +76,15 @@ export default function IndexContainer() {
   }, [])
 
   useEffect(() => {
-    if (!isObserve) return
-    setObserver()
+    isObserve && setObserver()
   }, [isObserve])
 
   useEffect(() => {
-    if (!currentOrg) return
-    setOrgRepoData({ isLoadMore: false })
+    currentOrg && setOrgRepoData({ isLoadMore: false })
   }, [currentOrg])
 
   useEffect(() => {
-    if (page < 2) return
-    setOrgRepoData({ isLoadMore: true })
+    page >= 2 && setOrgRepoData({ isLoadMore: true })
   }, [page])
 
   return (
@@ -97,7 +95,10 @@ export default function IndexContainer() {
           <Select
             id="organizations"
             placeholder="Select Organization"
-            onChange={(e) => setCurrentOrg(e.target.value)}
+            onChange={(e) => {
+              setPage(1)
+              setCurrentOrg(e.target.value)
+            }}
           >
             {orgList.map((org) => (
               <option value={org.login} key={org.node_id}>
