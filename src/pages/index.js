@@ -11,10 +11,13 @@ import Repos from '@/components/index/Repos'
 export default function IndexContainer() {
   const [isLoading, setIsLoading] = useState(false)
 
+  const limit = 10
+
   const [orgList, setOrgList] = useState([])
   const [currentOrg, setCurrentOrg] = useState('')
   const [repoList, setRepoList] = useState([])
   const [page, setPage] = useState(1)
+  const [isObserve, setIsObserve] = useState(false)
 
   const reposRef = useRef()
 
@@ -24,7 +27,7 @@ export default function IndexContainer() {
 
   async function getOrgRepos() {
     return getData(
-      API_URL + `/orgs/${currentOrg}/repos?per_page=10&page=${page}`
+      API_URL + `/orgs/${currentOrg}/repos?per_page=${limit}&page=${page}`
     )
   }
 
@@ -36,12 +39,16 @@ export default function IndexContainer() {
   async function setOrgRepoData({ isLoadMore }) {
     setIsLoading(true)
     const { data } = await getOrgRepos()
-    if (!data.length) {
-      return setIsLoading(false)
-    }
+    const l = data.length
+
+    if (!l) setIsLoading(false)
+
     isLoadMore
       ? setRepoList((oldData) => [...oldData, ...data])
       : setRepoList(data)
+
+    if (l === limit) setIsObserve(true)
+
     setIsLoading(false)
   }
 
@@ -53,7 +60,6 @@ export default function IndexContainer() {
 
     async function callback(entries) {
       if (!entries[0].isIntersecting) return
-      console.log(entries[0].isIntersecting)
       setPage((oldPage) => (oldPage += 1))
       observer.disconnect()
     }
@@ -69,9 +75,9 @@ export default function IndexContainer() {
   }, [])
 
   useEffect(() => {
-    if (!repoList.length) return
+    if (!isObserve) return
     setObserver()
-  }, [repoList])
+  }, [isObserve])
 
   useEffect(() => {
     if (!currentOrg) return
